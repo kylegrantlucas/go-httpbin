@@ -1,9 +1,12 @@
 package httpbin
 
 import (
+	"log"
 	"net/http"
 	"net/url"
 	"time"
+
+	sigsci "github.com/signalsciences/sigsci-module-golang"
 )
 
 // Default configuration values
@@ -201,9 +204,14 @@ func (h *HTTPBin) Handler() http.Handler {
 	mux.HandleFunc("/stream-bytes", http.NotFound)
 	mux.HandleFunc("/links", http.NotFound)
 
+	wrappername, err := sigsci.NewModule(mux, sigsci.Socket("unix", "/sigsci/tmp/sigsci.sock"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Apply global middleware
 	var handler http.Handler
-	handler = mux
+	handler = wrappername
 	handler = limitRequestSize(h.MaxBodySize, handler)
 	handler = preflight(handler)
 	handler = autohead(handler)
